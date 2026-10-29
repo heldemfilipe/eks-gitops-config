@@ -7,4 +7,4 @@ resources:
 # O CI da API troca a tag aqui (kustomize edit set image) e abre o pull request.
 images:
   - name: ghcr.io/heldemfilipe/orders-api
-    newTag: sha-quebrada
+    newTag: sha-bfef4cad2f4eb7c2908a7ca1cb1bc7a96d67063c
