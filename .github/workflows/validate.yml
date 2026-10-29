@@ -1,0 +1,23 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  manifests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Renderiza o Kustomize e valida o schema
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
+          kubectl kustomize workloads/pedidos > /tmp/pedidos.yaml
+          ./kubeconform -strict -summary /tmp/pedidos.yaml
+          # Applications e root usam CRDs do Argo CD, que o schema padrão não conhece
+          ./kubeconform -strict -summary -ignore-missing-schemas root.yaml apps/

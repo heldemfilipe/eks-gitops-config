@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pedidos
+  labels: { app: pedidos }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: pedidos }
+  template:
+    metadata:
+      labels: { app: pedidos }
+    spec:
+      # A política de "sem root" do Kyverno lê estes campos, não o USER do Dockerfile.
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: api
+          image: ghcr.io/heldemfilipe/orders-api # a tag vem do kustomization.yaml
+          env:
+            - { name: SPRING_PROFILES_ACTIVE, value: cloud }
+            # Sem credenciais, então pode ficar no Git. Na Etapa 3 vira um Secret entregue pelo External Secrets.
+            - { name: MONGODB_URI, value: "mongodb://mongo:27017/pedidos" }
+          ports: [{ name: http, containerPort: 8080 }]
+          resources:
+            requests: { cpu: 250m, memory: 384Mi }
+            limits: { memory: 640Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          # A JVM demora para subir: sem a startupProbe a liveness mataria o pod antes da hora.
+          startupProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /actuator/health/liveness, port: http }
+          readinessProbe:
+            httpGet: { path: /actuator/health/readiness, port: http }
