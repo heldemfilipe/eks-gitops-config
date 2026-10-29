@@ -1,0 +1,12 @@
+# Segredos e configuração local: nunca vão para o git
+.env
+.env.*
+*.env
+kubeconfig*
+*.kubeconfig
+*.pem
+*.key
+
+# Saídas geradas
+*.tmp
+rendered/
