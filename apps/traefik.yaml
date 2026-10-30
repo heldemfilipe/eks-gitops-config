@@ -31,6 +31,13 @@ spec:
             hostPort: 443
         service:
           type: ClusterIP
+        # Sem LoadBalancer, o Ingress ficaria sem endereço e o Argo CD o marcaria como Progressing para sempre.
+        providers:
+          kubernetesIngress:
+            publishedService:
+              enabled: false
+            ingressEndpoint:
+              ip: 127.0.0.1
         ingressClass:
           enabled: true
           isDefaultClass: true
