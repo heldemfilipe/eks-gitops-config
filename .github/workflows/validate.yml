@@ -17,7 +17,12 @@ jobs:
       - name: Renderiza o Kustomize e valida o schema
         run: |
           curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.8.0/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
-          kubectl kustomize workloads/pedidos > /tmp/pedidos.yaml
-          ./kubeconform -strict -summary /tmp/pedidos.yaml
-          # Applications e root usam CRDs do Argo CD, que o schema padrão não conhece
-          ./kubeconform -strict -summary -ignore-missing-schemas root.yaml apps/
+          # Recursos nativos são validados de verdade. CRDs (Argo CD, External Secrets, Prometheus) usam o
+          # catálogo da comunidade; o que ele não conhece é ignorado, para o CI não quebrar por falta de schema.
+          KC="./kubeconform -strict -summary -ignore-missing-schemas -schema-location default -schema-location https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json"
+          for d in workloads/*/; do
+            echo "== $d"
+            kubectl kustomize "$d" | $KC -
+          done
+          echo "== root e apps"
+          $KC root.yaml apps/
