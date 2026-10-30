@@ -29,6 +29,12 @@ spec:
             hostPort: 80
           websecure:
             hostPort: 443
+        # Com hostPort, o pod novo não sobe enquanto o antigo ocupa a porta 80 do nó: sem surge.
+        updateStrategy:
+          type: RollingUpdate
+          rollingUpdate:
+            maxUnavailable: 1
+            maxSurge: 0
         service:
           type: ClusterIP
         # Sem LoadBalancer, o Ingress ficaria sem endereço e o Argo CD o marcaria como Progressing para sempre.
