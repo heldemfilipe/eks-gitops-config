@@ -4,6 +4,8 @@ resources:
   - mongo.yaml
   - deployment.yaml
   - service.yaml
+  - externalsecret.yaml
+  - ingress.yaml
 # O CI da API troca a tag aqui (kustomize edit set image) e abre o pull request.
 images:
   - name: ghcr.io/heldemfilipe/orders-api

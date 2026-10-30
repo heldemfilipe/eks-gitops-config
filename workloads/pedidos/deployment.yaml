@@ -21,8 +21,10 @@ spec:
           image: ghcr.io/heldemfilipe/orders-api # a tag vem do kustomization.yaml
           env:
             - { name: SPRING_PROFILES_ACTIVE, value: cloud }
-            # Sem credenciais, então pode ficar no Git. Na Etapa 3 vira um Secret entregue pelo External Secrets.
-            - { name: MONGODB_URI, value: "mongodb://mongo:27017/pedidos" }
+            # Entregue pelo External Secrets (ExternalSecret pedidos-mongodb). Nada de URI no manifesto.
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef: { name: pedidos-mongodb, key: MONGODB_URI }
           ports: [{ name: http, containerPort: 8080 }]
           resources:
             requests: { cpu: 250m, memory: 384Mi }
