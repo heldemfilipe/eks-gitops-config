@@ -6,7 +6,8 @@ resources:
   - service.yaml
   - externalsecret.yaml
   - ingress.yaml
-# O CI da API troca a tag aqui (kustomize edit set image) e abre o pull request.
+  - servicemonitor.yaml
+# O script atualizar-config.sh (orders-api) troca a tag aqui e abre o pull request.
 images:
   - name: ghcr.io/heldemfilipe/orders-api
-    newTag: sha-442233d30c3aa99a63cf3ae87d49a0dccdc5ab98
+    newTag: sha-915d408551ea228f020158dd404e31b2bce0e0cb

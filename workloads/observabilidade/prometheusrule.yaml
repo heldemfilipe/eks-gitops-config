@@ -1,0 +1,40 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pedidos
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: pedidos
+      rules:
+        # Reinício de contêiner: CrashLoopBackOff e OOMKilled passam por aqui.
+        - alert: PedidosContainerReiniciando
+          expr: increase(kube_pod_container_status_restarts_total{namespace="pedidos"}[5m]) > 0
+          for: 1m
+          labels: { severity: warning }
+          annotations:
+            summary: "Contêiner {{ $labels.container }} do pod {{ $labels.pod }} reiniciou"
+            description: "{{ $value | printf \"%.0f\" }} reinício(s) nos últimos 5 minutos."
+        # ImagePullBackOff não reinicia contêiner (ele nunca chegou a rodar): precisa de regra própria.
+        - alert: PedidosImagemNaoBaixa
+          expr: kube_pod_container_status_waiting_reason{namespace="pedidos", reason=~"ImagePullBackOff|ErrImagePull"} == 1
+          for: 1m
+          labels: { severity: warning }
+          annotations:
+            summary: "Pod {{ $labels.pod }} não consegue baixar a imagem"
+        - alert: PedidosForaDoAr
+          expr: sum(up{job="pedidos", namespace="pedidos"}) == 0 or absent(up{job="pedidos", namespace="pedidos"})
+          for: 1m
+          labels: { severity: critical }
+          annotations:
+            summary: "Nenhuma réplica de pedidos responde ao Prometheus"
+        - alert: PedidosErros5xx
+          expr: |
+            sum(rate(http_server_requests_seconds_count{namespace="pedidos", status=~"5.."}[5m]))
+              / sum(rate(http_server_requests_seconds_count{namespace="pedidos"}[5m])) > 0.05
+          for: 2m
+          labels: { severity: warning }
+          annotations:
+            summary: "Mais de 5% das requisições da API terminam em 5xx"
