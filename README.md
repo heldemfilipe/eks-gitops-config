@@ -12,9 +12,10 @@ eks-gitops-config/
 ├── root.yaml              Application raiz, aplicada uma vez (Etapa 1)
 ├── apps/                  uma Application por componente
 └── workloads/
-    ├── pedidos/           Deployment, Service, Ingress e ServiceMonitor (Kustomize)
+    ├── pedidos/           Deployment, Service, Ingress, ServiceMonitor, NetworkPolicy, PDB e HPA (Kustomize)
     ├── secrets/           ClusterSecretStore do External Secrets
-    └── observabilidade/   PrometheusRule e dashboard do Grafana
+    ├── observabilidade/   PrometheusRule e dashboard do Grafana
+    └── politicas/         NamespacedValidatingPolicy do Kyverno (requests e limits, sem latest, sem root)
 ```
 
 ## Ambientes

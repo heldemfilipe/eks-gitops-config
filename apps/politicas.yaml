@@ -1,0 +1,29 @@
+# Políticas do Kyverno para o namespace pedidos. Dependem dos CRDs do Kyverno: onda 1.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: politicas
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/heldemfilipe/eks-gitops-config
+    targetRevision: main
+    path: workloads/politicas
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: pedidos
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 5
+      backoff: { duration: 10s, factor: 2, maxDuration: 2m }

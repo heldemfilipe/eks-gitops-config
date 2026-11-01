@@ -1,0 +1,20 @@
+# O pod ou cada contêiner precisa declarar runAsNonRoot: true. O Kyverno lê o manifesto, não o USER do Dockerfile.
+apiVersion: policies.kyverno.io/v1
+kind: NamespacedValidatingPolicy
+metadata:
+  name: proibe-root
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+  validations:
+    - expression: >-
+        (has(object.spec.securityContext) && has(object.spec.securityContext.runAsNonRoot) &&
+          object.spec.securityContext.runAsNonRoot) ||
+        object.spec.containers.all(c,
+          has(c.securityContext) && has(c.securityContext.runAsNonRoot) && c.securityContext.runAsNonRoot)
+      message: "O pod ou todos os contêineres precisam de securityContext.runAsNonRoot: true."
