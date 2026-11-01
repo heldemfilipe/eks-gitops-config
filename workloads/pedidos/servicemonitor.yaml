@@ -1,0 +1,15 @@
+# O Prometheus só enxerga ServiceMonitors com a label release igual ao nome do release do Helm.
+# Sem ela, o alvo nem aparece em /targets.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: pedidos
+  labels:
+    app: pedidos
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels: { app: pedidos }
+  endpoints:
+    - port: http # porta nomeada do Service
+      path: /actuator/prometheus

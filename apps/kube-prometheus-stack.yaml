@@ -1,0 +1,71 @@
+# Prometheus, Alertmanager, Grafana e kube-state-metrics. Valores enxutos para o laboratório (kind).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 92.17.0
+    helm:
+      valuesObject:
+        # No kind, o etcd, o scheduler, o controller-manager e o kube-proxy não expõem métricas do jeito
+        # padrão; ligados, só gerariam alvos "down" e alertas que nunca fecham.
+        kubeEtcd: { enabled: false }
+        kubeScheduler: { enabled: false }
+        kubeControllerManager: { enabled: false }
+        kubeProxy: { enabled: false }
+        # O node-exporter exige montar o / do nó como compartilhado, o que o Docker Desktop não permite.
+        nodeExporter: { enabled: false }
+        defaultRules:
+          rules:
+            etcd: false
+            kubeSchedulerAlerting: false
+            kubeSchedulerRecording: false
+            kubeControllerManager: false
+            kubeProxy: false
+            node: false
+            nodeExporterAlerting: false
+            nodeExporterRecording: false
+        prometheus:
+          prometheusSpec:
+            scrapeInterval: 15s
+            retention: 6h
+            # Sem PVC: os dados somem se o pod reiniciar. Aceitável no laboratório.
+            resources:
+              requests: { cpu: 100m, memory: 512Mi }
+              limits: { memory: 1Gi }
+        alertmanager:
+          alertmanagerSpec:
+            resources:
+              requests: { cpu: 10m, memory: 64Mi }
+              limits: { memory: 128Mi }
+        grafana:
+          resources:
+            requests: { cpu: 50m, memory: 256Mi }
+            limits: { memory: 512Mi }
+          # Acha ConfigMaps com a label grafana_dashboard em qualquer namespace.
+          sidecar:
+            dashboards:
+              searchNamespace: ALL
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      # Os CRDs do Prometheus Operator passam do limite de annotation do apply comum.
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff: { duration: 10s, factor: 2, maxDuration: 2m }
