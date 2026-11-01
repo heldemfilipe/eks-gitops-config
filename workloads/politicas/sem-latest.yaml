@@ -1,0 +1,19 @@
+# A imagem precisa ter tag explícita diferente de latest, ou digest. Sem tag, o runtime assume latest.
+apiVersion: policies.kyverno.io/v1
+kind: NamespacedValidatingPolicy
+metadata:
+  name: proibe-tag-latest
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+  validations:
+    - expression: >-
+        object.spec.containers.all(c,
+          c.image.contains('@sha256:') ||
+          (c.image.matches('^.+:[^:/@]+$') && !c.image.endsWith(':latest')))
+      message: "A imagem precisa ter uma tag explícita que não seja 'latest' (ou um digest)."

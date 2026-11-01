@@ -7,6 +7,9 @@ resources:
   - externalsecret.yaml
   - ingress.yaml
   - servicemonitor.yaml
+  - networkpolicy.yaml
+  - pdb.yaml
+  - hpa.yaml
 # O script atualizar-config.sh (orders-api) troca a tag aqui e abre o pull request.
 images:
   - name: ghcr.io/heldemfilipe/orders-api

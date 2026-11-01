@@ -1,0 +1,76 @@
+# Tudo negado por padrão; cada fluxo necessário é liberado abaixo. O Calico aplica estas regras.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: permite-dns
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: kube-system }
+          podSelector:
+            matchLabels: { k8s-app: kube-dns }
+      ports:
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
+---
+# A API recebe tráfego do Traefik (ingress) e do Prometheus (scrape). Mais ninguém.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pedidos-entrada
+spec:
+  podSelector:
+    matchLabels: { app: pedidos }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: traefik }
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: monitoring }
+          podSelector:
+            matchLabels: { app.kubernetes.io/name: prometheus }
+      ports:
+        - { protocol: TCP, port: 8080 }
+---
+# A única saída da API (além do DNS) é o Mongo.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: pedidos-saida
+spec:
+  podSelector:
+    matchLabels: { app: pedidos }
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: { app: mongo }
+      ports:
+        - { protocol: TCP, port: 27017 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mongo-entrada
+spec:
+  podSelector:
+    matchLabels: { app: mongo }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { app: pedidos }
+      ports:
+        - { protocol: TCP, port: 27017 }

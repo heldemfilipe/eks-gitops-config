@@ -1,0 +1,9 @@
+# Uma drenagem de nó nunca derruba as duas réplicas ao mesmo tempo.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pedidos
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: pedidos }
