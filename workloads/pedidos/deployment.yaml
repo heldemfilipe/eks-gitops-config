@@ -22,6 +22,8 @@ spec:
         runAsNonRoot: true
         runAsUser: 10001
         seccompProfile: { type: RuntimeDefault }
+      # Com 20 s de shutdown graceful na API e 10 s de preStop, 40 s deixam folga antes do SIGKILL.
+      terminationGracePeriodSeconds: 40
       containers:
         - name: api
           image: ghcr.io/heldemfilipe/orders-api # a tag vem do kustomization.yaml
@@ -38,6 +40,12 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
+          # O pod sai dos endpoints do Service e do Traefik de forma assincrona: sem esta espera, o SIGTERM chega
+          # antes e as requisicoes em voo ou novas caem em EOF e connection refused (71 POST perdidos em um
+          # rollout restart sob carga; com 10 s, 0). Veja docs/06 do eks-gitops-platform.
+          lifecycle:
+            preStop:
+              sleep: { seconds: 10 }
           # A JVM demora para subir: sem a startupProbe a liveness mataria o pod antes da hora.
           startupProbe:
             httpGet: { path: /actuator/health/liveness, port: http }
